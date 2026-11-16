@@ -1,0 +1,34 @@
+# 
+# Copyright Jerily LTD. All Rights Reserved.
+# SPDX-FileCopyrightText: 2026 Neofytos Dimitriou (neo@jerily.cy)
+# SPDX-License-Identifier: MIT.
+# 
+
+package require tcltest 2
+namespace import ::tcltest::test
+lappend ::auto_path [file dirname [file dirname [file normalize [info script]]]]
+package require pure-tcl-aws-dynamodb
+set endpoint [lindex $argv 0]
+set argv {}
+set c [::aws::dynamodb::create [dict create region us-east-1 endpoint $endpoint aws_access_key_id test aws_secret_access_key test aws_session_token temporary-token]]
+test dynamodb-table {table schemas, capacity, indexes and list pagination} -body {
+    $c create_table table {id {S HASH} other S} {ReadCapacityUnits 1 WriteCapacityUnits 2} {{IndexName idx KeySchema {{other HASH}}}}
+    set tables [$c list_tables]
+    $c delete_table table
+    set tables
+} -result {one two}
+test dynamodb-scan {empty scan pages still follow LastEvaluatedKey} -body {$c scan table} -result {{id {S two}}}
+test dynamodb-update {update expressions retain exact decimal numbers} -body {
+    $c update_item table {id {S one}} {SET n = :n} {expression_attribute_values {:n {N 123456789012345678901234567890.12345678}}}
+} -result {n {N 123456789012345678901234567890.12345678}}
+test dynamodb-types {nested values, sets, booleans and binary values round trip} -body {
+    set value [dict create nested [list M [dict create list [list L [list {BOOL false} {NULL true} [list B [binary format H* 00ff]]]]]] n {N 123456789012345678901234567890.12345678} set {SS {one two}}]
+    $c put_item table $value
+    set simple [::aws::dynamodb::typed_item_to_simple [$c get_item table {id {S one}}]]
+    list [dict get $simple n] [dict get $simple set] [binary encode hex [lindex [dict get $simple nested list] 2]]
+} -result {123456789012345678901234567890.12345678 {one two} 00ff}
+
+$c destroy
+set failed $::tcltest::numTests(Failed)
+::tcltest::cleanupTests
+exit [expr {$failed > 0}]
