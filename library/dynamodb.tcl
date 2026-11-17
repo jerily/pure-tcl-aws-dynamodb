@@ -202,5 +202,5 @@ proc ::aws::dynamodb::_list_tables {client} {
         dict set fields ExclusiveStartTableName [list S $token]
     }
 }
-package provide pure-tcl-aws-dynamodb 0.1.1
+package provide pure-tcl-aws-dynamodb 1.0.0
 package provide awsdynamodb 1.0.19
