@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT.
 # 
 
-package require pure-tcl-aws-core 0.1.0
+package require pure-tcl-aws-core 1.0.0
 namespace eval ::aws::dynamodb {namespace path ::aws::core}
 ::aws::core::register dynamodb {put_item get_item delete_item query_items scan update_item create_table delete_table list_tables}
 
@@ -202,5 +202,5 @@ proc ::aws::dynamodb::_list_tables {client} {
         dict set fields ExclusiveStartTableName [list S $token]
     }
 }
-package provide pure-tcl-aws-dynamodb 0.1.0
+package provide pure-tcl-aws-dynamodb 0.1.1
 package provide awsdynamodb 1.0.19
